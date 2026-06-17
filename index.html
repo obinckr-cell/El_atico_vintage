@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>ÁTICO RESTAURANTE VINTAGE</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif; }
+        body { background:#0f0f0f; color:#fff; overflow-x:hidden; padding-bottom:80px; }
+        
+        /* Header y Logo */
+        header { background:linear-gradient(180deg,#000,#0f0f0f); text-align:center; padding:15px 10px; border-bottom:1px solid rgba(255,255,255,.08); }
+        .logo-box { width:100px; height:100px; margin:auto; border-radius:20px; background:#1a1a1a; display:flex; align-items:center; justify-content:center; box-shadow:0 5px 15px rgba(0,0,0,.6); }
+        .logo { width:80px; height:80px; object-fit:contain; }
+        header h1 { font-size:24px; letter-spacing:4px; margin-top:8px; color:#f5d08a; font-weight:900; }
+        
+        /* Pestañas */
+        .tabs { display:flex; justify-content:center; gap:10px; padding:15px; background:#000; }
+        .tab-btn { padding:10px 20px; border:1px solid #f5d08a; background:transparent; color:#f5d08a; border-radius:8px; font-weight:bold; font-size:14px; cursor:pointer; }
+        .tab-btn.active { background:#f5d08a; color:#000; }
+
+        /* Menú y Categorías */
+        .categoria { font-size:22px; font-weight:900; color:#f5d08a; text-align:center; margin:25px 0 10px; letter-spacing:2px; }
+        .categoria::before, .categoria::after { content:""; display:block; width:50%; height:1px; margin:5px auto; background:linear-gradient(90deg,transparent,#f5d08a,transparent); }
+        
+        .container { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; padding:10px; }
+        .card { background:#1b1b1b; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+        .card img { width:100%; height:120px; object-fit:cover; }
+        .card-content { padding:8px; display:flex; flex-direction:column; gap:5px; }
+        .card h3 { font-size:14px; font-weight:700; height:35px; overflow:hidden; }
+        .precio { font-size:14px; color:#ffb347; font-weight:bold; }
+        .btn { width:100%; padding:10px; border:none; border-radius:8px; background:#f5d08a; font-weight:bold; font-size:14px; cursor:pointer; }
+        
+        /* Botones Flotantes */
+        .cart-btn { position:fixed; bottom:90px; right:15px; width:60px; height:60px; border-radius:50%; background:#ff9800; border:none; font-size:24px; color:#fff; z-index:999; box-shadow:0 4px 10px rgba(0,0,0,0.5); }
+        .whatsapp-btn { position:fixed; bottom:15px; right:15px; width:60px; height:60px; border-radius:50%; background:#25D366; display:flex; align-items:center; justify-content:center; font-size:28px; text-decoration:none; color:#fff; z-index:999; box-shadow:0 4px 10px rgba(0,0,0,0.5); }
+        
+        /* Carrito */
+        #cart { position:fixed; top:0; left:-100%; width:90%; height:100%; background:#181818; transition:.3s ease; z-index:1000; overflow-y:auto; }
+        #cart.active { left:0; }
+        .cart-header { padding:15px; display:flex; justify-content:space-between; align-items:center; background:#000; }
+        .item { display:flex; gap:10px; align-items:center; background:#2a2a2a; padding:10px; border-radius:10px; margin-bottom:10px; }
+        .item img { width:60px; height:60px; border-radius:8px; object-fit:cover; }
+        
+        .total-fuera { position:fixed; bottom:0; left:0; width:100%; background:#000; padding:15px; display:flex; justify-content:space-between; font-size:18px; font-weight:bold; border-top:1px solid #333; z-index:999; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-box"><img src="logo.png" class="logo"></div>
+    <h1>ÁTICO</h1>
+</header>
+
+<div class="tabs">
+    <button id="btnAtico" class="tab-btn active" onclick="setMode('ÁTICO')">ÁTICO</button>
+    <button id="btnLlevar" class="tab-btn" onclick="setMode('PARA LLEVAR')">PARA LLEVAR</button>
+</div>
+
+<div id="menu"></div>
+
+<button class="cart-btn" id="cartBtn" onclick="toggleCart()">🛒 <span id="count">0</span></button>
+<a class="whatsapp-btn" onclick="enviarPedido()">📲</a>
+
+<div id="cart">
+    <div class="cart-header">
+        <h2>Tu Pedido</h2>
+        <button onclick="vaciarCarrito()" style="background:#ff4444; border:none; padding:8px 12px; color:#fff; border-radius:5px;">Borrar</button>
+        <button onclick="toggleCart()" style="background:none; border:none; color:#fff; font-size:20px;">✖</button>
+    </div>
+    <div id="items" style="padding:15px;"></div>
+</div>
+
+<div class="total-fuera">
+    <span>Total</span>
+    <span>$<span id="totalGeneral">0</span></span>
+</div>
+
+<script>
+const numeroWhatsApp = "573106505193";
+let modoPedido = "ÁTICO"; 
+
+const comidasAtico = [
+    {nombre:"INGLESA",precio:21000,img:"inglesa.jpg",categoria:"HAMBURGUESAS"},
+    {nombre:"BROOKLYN",precio:20000,img:"brooklyn.jpg",categoria:"HAMBURGUESAS"},
+    {nombre:"YORK",precio:20000,img:"york.jpg",categoria:"HAMBURGUESAS"},
+    {nombre:"ALOHA",precio:22000,img:"aloha.jpg",categoria:"HAMBURGUESAS"},
+    {nombre:"MANCHESTER",precio:27000,img:"manchester.jpg",categoria:"HAMBURGUESAS"},
+    {nombre:"BRUNCH MIX",precio:27000,img:"brunch_mix.jpg",categoria:"BRUNCH"},
+    {nombre:"BRUNCH",precio:20000,img:"brunch.jpg",categoria:"BRUNCH"},
+    {nombre:"BRUNCH DE POLLO",precio:20000,img:"brunch_pollo.jpg",categoria:"BRUNCH"},
+    {nombre:"TACOS DON JULIO",precio:21000,img:"tacos.jpg",categoria:"COMIDA MEXICANA"},
+    {nombre:"QUESADILLAS MONTERREY",precio:21000,img:"quesadillas.jpg",categoria:"COMIDA MEXICANA"},
+    {nombre:"PAPAS COLOMBIANAS",precio:22000,img:"colombianas.jpg",categoria:"PAPAS"},
+    {nombre:"ADICION DE TOCINETA",precio:2000,img:"tocineta.jpg",categoria:"ADICIONES"},
+    {nombre:"ADICIÓN DE PAPAS",precio:4000,img:"papas.jpg",categoria:"ADICIONES"},
+    {nombre:"ADICIÓN DE CARNE",precio:5000,img:"carne.jpg",categoria:"ADICIONES"},
+    {nombre:"ADICIÓN SALSA",precio:1000,img:"salsa.jpg",categoria:"ADICIONES"},
+    {nombre:"ADICIÓN QUESO",precio:1000,img:"queso.jpg",categoria:"ADICIONES"},
+    {nombre:"MANGO BICHE",precio:7000,img:"mango.jpg",categoria:"SODA"},
+    {nombre:"FRESA",precio:7000,img:"sfresa.jpg",categoria:"SODA"},
+    {nombre:"MORA AZUL",precio:7000,img:"smora_azul.jpg",categoria:"SODA"},
+    {nombre:"SANDÍA",precio:7000,img:"ssandia.jpg",categoria:"SODA"},
+    {nombre:"MANDARINA",precio:7000,img:"smandarina.jpg",categoria:"SODA"},
+    {nombre:"MANZANA VERDE",precio:7000,img:"smanzanaV.jpg",categoria:"SODA"},
+    {nombre:"MICHELADA DE SODA",precio:7000,img:"misoda.jpg",categoria:"SODA"},
+    {nombre:"MARACUYÁ",precio:7000,img:"smaracuya.jpg",categoria:"SODA"},
+    {nombre:"TAMARINDO",precio:7000,img:"stamarindo.jpg",categoria:"SODA"},
+    {nombre:"COCA COLA",precio:6000,img:"coca.jpg",categoria:"BEBIDAS"},
+    {nombre:"CORONITA",precio:5000,img:"coronita.jpg",categoria:"BEBIDAS"},
+    {nombre:"AGUA",precio:3000,img:"agua.jpg",categoria:"BEBIDAS"},
+    {nombre:"TINTO",precio:1500,img:"tinto.jpg",categoria:"BEBIDAS"},
+    {nombre:"AROMÁTICA",precio:1500,img:"aromatica.jpg",categoria:"BEBIDAS"},
+    {nombre:"VINO",precio:6000,img:"vino.jpg",categoria:"BEBIDAS"}
+];
+
+const comidasLlevar = [
+    {nombre:"INGLESA",precio:22000,img:"inglesa.jpg",categoria:"HAMBURGUESAS"},
+    {nombre:"BROOKLYN",precio:21000,img:"brooklyn.jpg",categoria:"HAMBURGUESAS"},
+    {nombre:"YORK",precio:21000,img:"york.jpg",categoria:"HAMBURGUESAS"},
+    {nombre:"ALOHA",precio:23000,img:"aloha.jpg",categoria:"HAMBURGUESAS"},
+    {nombre:"MANCHESTER",precio:28000,img:"manchester.jpg",categoria:"HAMBURGUESAS"},
+    {nombre:"BRUNCH MIX",precio:28000,img:"brunch_mix.jpg",categoria:"BRUNCH"},
+    {nombre:"BRUNCH",precio:21000,img:"brunch.jpg",categoria:"BRUNCH"},
+    {nombre:"BRUNCH DE POLLO",precio:21000,img:"brunch_pollo.jpg",categoria:"BRUNCH"},
+    {nombre:"TACOS DON JULIO",precio:22000,img:"tacos.jpg",categoria:"COMIDA MEXICANA"},
+    {nombre:"QUESADILLAS MONTERREY",precio:22000,img:"quesadillas.jpg",categoria:"COMIDA MEXICANA"},
+    {nombre:"PAPAS COLOMBIANAS",precio:23000,img:"colombianas.jpg",categoria:"PAPAS"},
+    {nombre:"ADICION DE TOCINETA",precio:2000,img:"tocineta.jpg",categoria:"ADICIONES"},
+    {nombre:"ADICIÓN DE PAPAS",precio:4000,img:"papas.jpg",categoria:"ADICIONES"},
+    {nombre:"ADICIÓN DE CARNE",precio:5000,img:"carne.jpg",categoria:"ADICIONES"},
+    {nombre:"ADICIÓN SALSA",precio:1000,img:"salsa.jpg",categoria:"ADICIONES"},
+    {nombre:"ADICIÓN QUESO",precio:1000,img:"queso.jpg",categoria:"ADICIONES"},
+    {nombre:"MANGO BICHE",precio:7000,img:"mango.jpg",categoria:"SODA"},
+    {nombre:"FRESA",precio:7000,img:"sfresa.jpg",categoria:"SODA"},
+    {nombre:"MORA AZUL",precio:7000,img:"smora_azul.jpg",categoria:"SODA"},
+    {nombre:"SANDÍA",precio:7000,img:"ssandia.jpg",categoria:"SODA"},
+    {nombre:"MANDARINA",precio:7000,img:"smandarina.jpg",categoria:"SODA"},
+    {nombre:"MANZANA VERDE",precio:7000,img:"smanzanaV.jpg",categoria:"SODA"},
+    {nombre:"MICHELADA DE SODA",precio:7000,img:"misoda.jpg",categoria:"SODA"},
+    {nombre:"MARACUYÁ",precio:7000,img:"smaracuya.jpg",categoria:"SODA"},
+    {nombre:"TAMARINDO",precio:7000,img:"stamarindo.jpg",categoria:"SODA"},
+    {nombre:"COCA COLA",precio:6000,img:"coca.jpg",categoria:"BEBIDAS"},
+    {nombre:"CORONITA",precio:5000,img:"coronita.jpg",categoria:"BEBIDAS"},
+    {nombre:"AGUA",precio:3000,img:"agua.jpg",categoria:"BEBIDAS"},
+    {nombre:"TINTO",precio:1500,img:"tinto.jpg",categoria:"BEBIDAS"},
+    {nombre:"AROMÁTICA",precio:1500,img:"aromatica.jpg",categoria:"BEBIDAS"},
+    {nombre:"VINO",precio:6000,img:"vino.jpg",categoria:"BEBIDAS"}
+];
+
+let currentData = comidasAtico;
+let carrito = [];
+const ordenCategorias = ["HAMBURGUESAS","BRUNCH","COMIDA MEXICANA","PAPAS","ADICIONES","SODA","BEBIDAS"];
+
+function setMode(mode) {
+    modoPedido = mode;
+    currentData = (mode === "ÁTICO") ? comidasAtico : comidasLlevar;
+    document.getElementById("btnAtico").classList.toggle("active", mode === "ÁTICO");
+    document.getElementById("btnLlevar").classList.toggle("active", mode === "PARA LLEVAR");
+    renderMenu();
+}
+
+function renderMenu(){
+    const menu = document.getElementById("menu");
+    menu.innerHTML = "";
+    ordenCategorias.forEach(cat => {
+        const h = document.createElement("h2");
+        h.className = "categoria";
+        h.textContent = cat;
+        menu.appendChild(h);
+        const cont = document.createElement("div");
+        cont.className = "container";
+        currentData.filter(p => p.categoria === cat).forEach(p => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `<img src="${p.img}" onerror="this.src='https://via.placeholder.com/150'"><div class="card-content"><h3>${p.nombre}</h3><div class="precio">$${p.precio.toLocaleString()}</div><button class="btn" onclick="agregar('${p.nombre}')">Añadir</button></div>`;
+            cont.appendChild(card);
+        });
+        menu.appendChild(cont);
+    });
+}
+
+function agregar(nombre) {
+    const item = currentData.find(c => c.nombre === nombre);
+    carrito.push(item);
+    renderCart();
+}
+
+function renderCart(){
+    const items = document.getElementById("items");
+    items.innerHTML = "";
+    let total = 0;
+    ordenCategorias.forEach(cat => {
+        const prods = carrito.filter(p => p.categoria === cat);
+        if(prods.length > 0) {
+            items.innerHTML += `<div style="color:#f5d08a; font-weight:bold; margin-top:10px;">${cat}</div>`;
+            prods.forEach(p => {
+                total += p.precio;
+                items.innerHTML += `<div class="item"><img src="${p.img}" onerror="this.src='https://via.placeholder.com/150'"><div style="flex:1"><strong>${p.nombre}</strong><br>$${p.precio.toLocaleString()}</div><button onclick="eliminar(${carrito.indexOf(p)})" style="background:none; border:none; color:red; font-size:20px;">✖</button></div>`;
+            });
+        }
+    });
+    document.getElementById("count").textContent = carrito.length;
+    document.getElementById("totalGeneral").textContent = total.toLocaleString();
+}
+
+function eliminar(i) { carrito.splice(i, 1); renderCart(); }
+function vaciarCarrito() { carrito = []; renderCart(); }
+function toggleCart() { document.getElementById("cart").classList.toggle("active"); }
+
+function enviarPedido() {
+    let msg = `PEDIDO ${modoPedido}\n\n`;
+    let total = 0;
+    ordenCategorias.forEach(cat => {
+        const prods = carrito.filter(p => p.categoria === cat);
+        prods.forEach(p => { msg += `• ${p.nombre} - $${p.precio.toLocaleString()}\n`; total += p.precio; });
+    });
+    msg += `\n TOTAL: $${total.toLocaleString()}`;
+    window.open(`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(msg)}`, "_blank");
+}
+
+renderMenu();
+renderCart();
+</script>
+
+</body>
+</html>
