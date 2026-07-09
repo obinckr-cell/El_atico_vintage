@@ -8,19 +8,42 @@
         * { margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif; }
         body { background:#0f0f0f; color:#fff; overflow-x:hidden; padding-bottom:100px; }
         
-        /* Header y Logo */
         header { background:linear-gradient(180deg,#000,#0f0f0f); text-align:center; padding:15px 10px; border-bottom:1px solid rgba(255,255,255,.08); }
         .logo-box { width:100px; height:100px; margin:auto; border-radius:20px; background:#1a1a1a; display:flex; align-items:center; justify-content:center; box-shadow:0 5px 15px rgba(0,0,0,.6); }
         .logo { width:80px; height:80px; object-fit:contain; }
         header h1 { font-size:24px; letter-spacing:4px; margin-top:8px; color:#f5d08a; font-weight:900; }
         
-        /* Pestañas */
         .tabs { display:flex; justify-content:center; gap:10px; padding:15px; background:#000; }
         .tab-btn { padding:10px 20px; border:1px solid #f5d08a; background:transparent; color:#f5d08a; border-radius:8px; font-weight:bold; font-size:14px; cursor:pointer; }
         .tab-btn.active { background:#f5d08a; color:#000; }
 
-        /* Menú y Categorías */
-        .categoria { font-size:22px; font-weight:900; color:#f5d08a; text-align:center; margin:25px 0 10px; letter-spacing:2px; }
+        /* Estilo de burbujas fijas */
+        .sticky-nav { 
+            position: sticky; 
+            top: 0; 
+            background: #000; 
+            padding: 10px; 
+            z-index: 998; 
+            display: flex; 
+            gap: 8px; 
+            overflow-x: auto; 
+            scrollbar-width: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        .sticky-nav::-webkit-scrollbar { display: none; }
+        .burbuja { 
+            white-space: nowrap; 
+            padding: 8px 16px; 
+            background: #1a1a1a; 
+            border: 1px solid #f5d08a; 
+            border-radius: 20px; 
+            color: #f5d08a; 
+            font-size: 12px; 
+            font-weight: bold; 
+            cursor: pointer; 
+        }
+
+        .categoria { font-size:22px; font-weight:900; color:#f5d08a; text-align:center; margin:25px 0 10px; letter-spacing:2px; scroll-margin-top: 60px; }
         .categoria::before, .categoria::after { content:""; display:block; width:50%; height:1px; margin:5px auto; background:linear-gradient(90deg,transparent,#f5d08a,transparent); }
         
         .container { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; padding:10px; }
@@ -31,11 +54,9 @@
         .precio { font-size:14px; color:#ffb347; font-weight:bold; }
         .btn { width:100%; padding:10px; border:none; border-radius:8px; background:#f5d08a; font-weight:bold; font-size:14px; cursor:pointer; }
         
-        /* Botones Flotantes (Ajustados para subir) */
         .cart-btn { position:fixed; bottom:160px; right:15px; width:60px; height:60px; border-radius:50%; background:#ff9800; border:none; font-size:24px; color:#fff; z-index:999; box-shadow:0 4px 10px rgba(0,0,0,0.5); }
         .whatsapp-btn { position:fixed; bottom:85px; right:15px; width:60px; height:60px; border-radius:50%; background:#25D366; display:flex; align-items:center; justify-content:center; font-size:28px; text-decoration:none; color:#fff; z-index:999; box-shadow:0 4px 10px rgba(0,0,0,0.5); }
         
-        /* Carrito */
         #cart { position:fixed; top:0; left:-100%; width:90%; height:100%; background:#181818; transition:.3s ease; z-index:1000; overflow-y:auto; }
         #cart.active { left:0; }
         .cart-header { padding:15px; display:flex; justify-content:space-between; align-items:center; background:#000; }
@@ -56,6 +77,8 @@
     <button id="btnAtico" class="tab-btn active" onclick="setMode('ÁTICO')">ÁTICO</button>
     <button id="btnLlevar" class="tab-btn" onclick="setMode('PARA LLEVAR')">PARA LLEVAR</button>
 </div>
+
+<div class="sticky-nav" id="navBurbujas"></div>
 
 <div id="menu"></div>
 
@@ -79,6 +102,7 @@
 <script>
 const numeroWhatsApp = "573106505193";
 let modoPedido = "ÁTICO"; 
+let carrito = [];
 
 const comidasAtico = [
     {nombre:"INGLESA",precio:21000,img:"inglesa.jpg",categoria:"HAMBURGUESAS"},
@@ -155,7 +179,6 @@ const comidasLlevar = [
 ];
 
 let currentData = comidasAtico;
-let carrito = [];
 const ordenCategorias = ["HAMBURGUESAS","BRUNCH","COMIDA MEXICANA","PAPAS","ADICIONES","SODA","BEBIDAS"];
 
 function setMode(mode) {
@@ -168,12 +191,23 @@ function setMode(mode) {
 
 function renderMenu(){
     const menu = document.getElementById("menu");
+    const nav = document.getElementById("navBurbujas");
     menu.innerHTML = "";
+    nav.innerHTML = "";
+    
     ordenCategorias.forEach(cat => {
+        const btn = document.createElement("div");
+        btn.className = "burbuja";
+        btn.textContent = cat;
+        btn.onclick = () => document.getElementById("cat-" + cat).scrollIntoView({ behavior: 'smooth' });
+        nav.appendChild(btn);
+
         const h = document.createElement("h2");
+        h.id = "cat-" + cat;
         h.className = "categoria";
         h.textContent = cat;
         menu.appendChild(h);
+        
         const cont = document.createElement("div");
         cont.className = "container";
         currentData.filter(p => p.categoria === cat).forEach(p => {
@@ -228,6 +262,5 @@ function enviarPedido() {
 renderMenu();
 renderCart();
 </script>
-
 </body>
 </html>
