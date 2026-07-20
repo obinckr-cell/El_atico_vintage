@@ -8,10 +8,16 @@
         * { margin:0; padding:0; box-sizing:border-box; font-family:Arial,sans-serif; }
         body { background:#0f0f0f; color:#fff; overflow-x:hidden; padding-bottom:100px; }
         
-        header { background:linear-gradient(180deg,#000,#0f0f0f); text-align:center; padding:15px 10px; border-bottom:1px solid rgba(255,255,255,.08); }
+        /* Se agregó position:relative al header para anclar los botones de envío */
+        header { position:relative; background:linear-gradient(180deg,#000,#0f0f0f); text-align:center; padding:15px 10px; border-bottom:1px solid rgba(255,255,255,.08); }
         .logo-box { width:100px; height:100px; margin:auto; border-radius:20px; background:#1a1a1a; display:flex; align-items:center; justify-content:center; box-shadow:0 5px 15px rgba(0,0,0,.6); }
         .logo { width:80px; height:80px; object-fit:contain; }
         header h1 { font-size:24px; letter-spacing:4px; margin-top:8px; color:#f5d08a; font-weight:900; }
+        
+        /* ESTILOS NUEVOS PARA LOS BOTONES DE ENVÍO EN LA ESQUINA */
+        .envio-container { display:none; position:absolute; top:15px; right:15px; flex-direction:column; gap:5px; z-index:100; text-align:right; }
+        .envio-container button { background:#1a1a1a; color:#f5d08a; border:1px solid #f5d08a; border-radius:4px; padding:5px 8px; font-size:12px; font-weight:bold; cursor:pointer; }
+        .envio-container button:active { background:#f5d08a; color:#000; }
         
         .tabs { display:flex; justify-content:center; gap:10px; padding:15px; background:#000; }
         .tab-btn { padding:10px 20px; border:1px solid #f5d08a; background:transparent; color:#f5d08a; border-radius:8px; font-weight:bold; font-size:14px; cursor:pointer; }
@@ -71,6 +77,13 @@
 <header>
     <div class="logo-box"><img src="logo.png" class="logo"></div>
     <h1>ÁTICO</h1>
+    
+    <!-- NUEVOS BOTONES DE ENVÍO EN LA ESQUINA SUPERIOR DERECHA -->
+    <div id="opcionesEnvio" class="envio-container">
+        <span style="font-size:10px; color:#f5d08a;">+ ENVÍO</span>
+        <button onclick="agregarEnvio('', 5000)">$5.000</button>
+        <button onclick="agregarEnvio('', 6000)">$6.000</button>
+    </div>
 </header>
 
 <div class="tabs">
@@ -148,7 +161,8 @@ const comidasLlevar = [
     {nombre:"YORK",precio:21000,img:"york.jpg",categoria:"HAMBURGUESAS"},
     {nombre:"ALOHA",precio:23000,img:"aloha.jpg",categoria:"HAMBURGUESAS"},
     {nombre:"MANCHESTER",precio:27000,img:"manchester.jpg",categoria:"HAMBURGUESAS"},
-    {nombre:"BRUNCH MIX",precio:27000,img:"brunch_mix.jpg",categoria:"BRUNCH"},
+    {nombre:"ÁMSTERDAM",precio:27000,img:"amsterdam.jpg",categoria:"HAMBURGUESAS"},
+    {nombre:"BRUNCH MIX",precio:28000,img:"brunch_mix.jpg",categoria:"BRUNCH"},
     {nombre:"BRUNCH",precio:21000,img:"brunch.jpg",categoria:"BRUNCH"},
     {nombre:"BRUNCH DE POLLO",precio:21000,img:"brunch_pollo.jpg",categoria:"BRUNCH"},
     {nombre:"TACOS DE RES",precio:22000,img:"tacos.jpg",categoria:"COMIDA MEXICANA"},
@@ -180,14 +194,35 @@ const comidasLlevar = [
 ];
 
 let currentData = comidasAtico;
-const ordenCategorias = ["HAMBURGUESAS","BRUNCH","COMIDA MEXICANA","PAPAS","ADICIONES","SODA","BEBIDAS"];
+// Se añadió "ENVÍO" al final para que el carrito lo sepa renderizar
+const ordenCategorias = ["HAMBURGUESAS","BRUNCH","COMIDA MEXICANA","PAPAS","ADICIONES","SODA","BEBIDAS", "ENVÍO"];
 
 function setMode(mode) {
     modoPedido = mode;
     currentData = (mode === "ÁTICO") ? comidasAtico : comidasLlevar;
     document.getElementById("btnAtico").classList.toggle("active", mode === "ÁTICO");
     document.getElementById("btnLlevar").classList.toggle("active", mode === "PARA LLEVAR");
+    
+    // Muestra u oculta los botones de envío en la esquina
+    const opcionesEnvio = document.getElementById("opcionesEnvio");
+    if (mode === "PARA LLEVAR") {
+        opcionesEnvio.style.display = "flex";
+    } else {
+        opcionesEnvio.style.display = "none";
+    }
+    
     renderMenu();
+}
+
+// Nueva función para agregar el domicilio directamente al carrito
+function agregarEnvio(tipo, precio) {
+    carrito.push({
+        nombre: "DOMICILIO " + tipo,
+        precio: precio,
+        img: "https://cdn-icons-png.flaticon.com/512/75/75784.png",
+        categoria: "ENVÍO"
+    });
+    renderCart();
 }
 
 function renderMenu(){
@@ -197,6 +232,10 @@ function renderMenu(){
     nav.innerHTML = "";
     
     ordenCategorias.forEach(cat => {
+        // Evitamos crear secciones vacías en el menú (como ENVÍO, que no tiene productos fijos)
+        const productosCategoria = currentData.filter(p => p.categoria === cat);
+        if (productosCategoria.length === 0) return;
+
         const btn = document.createElement("div");
         btn.className = "burbuja";
         btn.textContent = cat;
@@ -211,7 +250,7 @@ function renderMenu(){
         
         const cont = document.createElement("div");
         cont.className = "container";
-        currentData.filter(p => p.categoria === cat).forEach(p => {
+        productosCategoria.forEach(p => {
             const card = document.createElement("div");
             card.className = "card";
             card.innerHTML = `<img src="${p.img}" onerror="this.src='https://via.placeholder.com/150'"><div class="card-content"><h3>${p.nombre}</h3><div class="precio">$${p.precio.toLocaleString()}</div><button class="btn" onclick="agregar('${p.nombre}')">Añadir</button></div>`;
@@ -265,4 +304,3 @@ renderCart();
 </script>
 </body>
 </html>
-
